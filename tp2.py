@@ -13,40 +13,30 @@ from sklearn.cluster import KMeans, DBSCAN
 from sklearn.mixture import GaussianMixture
 from skimage.io import imread,imsave
 
+    
+def compute_read_indexes(data,labels,faults):
+    
+    sf = sc = tp = tn = 0.0
 
-def plot_classes(labels,lon,lat, alpha=0.5, edge = 'k'):
-    """Plot seismic events using Mollweide projection.
-    Arguments are the cluster labels and the longitude and latitude
-    vectors of the events"""
-    img = imread("Mollweide_projection_SW.jpg")        
-    plt.figure(figsize=(10,5),frameon=False)    
-    x = lon/180*np.pi
-    y = lat/180*np.pi
-    ax = plt.subplot(111, projection="mollweide")
-    print(ax.get_xlim(), ax.get_ylim())
-    t = ax.transData.transform(np.vstack((x,y)).T)
-    print(np.min(np.vstack((x,y)).T,axis=0))
-    print(np.min(t,axis=0))
-    clims = np.array([(-np.pi,0),(np.pi,0),(0,-np.pi/2),(0,np.pi/2)])
-    lims = ax.transData.transform(clims)
-    plt.close()
-    plt.figure(figsize=(10,5),frameon=False)    
-    plt.subplot(111)
-    plt.imshow(img,zorder=0,extent=[lims[0,0],lims[1,0],lims[2,1],lims[3,1]],aspect=1)        
-    x = t[:,0]
-    y= t[:,1]
-    nots = np.zeros(len(labels)).astype(bool)
-    diffs = np.unique(labels)    
-    ix = 0   
-    for lab in diffs[diffs>=0]:        
-        mask = labels==lab
-        nots = np.logical_or(nots,mask)        
-        plt.plot(x[mask], y[mask],'o', markersize=4, mew=1,zorder=1,alpha=alpha, markeredgecolor=edge)
-        ix = ix+1                    
-    mask = np.logical_not(nots)    
-    if np.sum(mask)>0:
-        plt.plot(x[mask], y[mask], '.', markersize=1, mew=1,markerfacecolor='w', markeredgecolor=edge)
-    plt.axis('off')    
+    for ix in range(len(labels)-1):
+        same_fault = faults[ix] == faults[ix+1:]
+
+        same_cluster = labels[ix] == labels[ix+1:]
+
+        sf += np.sum(same_fault)
+        sc += np.sum(same_cluster)
+
+        tp += np.sum(np.logical_and(same_fault,same_cluster))
+        tn += np.sum(np.logical_and(np.logical_not(same_fault), np.logical_not(same_cluster)))
+
+        total = len(labels)*(len(labels)-1)/2
+        precision = tp/sc
+        recall = tp/sf
+
+        rand = (tp+tn)/total
+        F1 = precision*recall*2/(precision+recall)
+
+    return precision, recall, rand, F1, adjusted_rand_score(labels, faults), silhouette_score(data, labels)
 
 
 RADIUS = 6371
@@ -72,4 +62,4 @@ MeansLabels = kmeans.labels_
 
 MeansCentroids = kmeans.cluster_centers_
 
-GaussianMixture(2).fit(cols)
+gaus = GaussianMixture(n_components=2).fit(cols)
