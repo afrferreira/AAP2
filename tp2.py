@@ -77,7 +77,7 @@ data[:,0]=x[:]
 data[:,1]=y[:]
 data[:,2]=z[:]
 
-#KMEANS
+#--------------------------------KMEANS---------------------------------------#
 bestVal=0
 bestK=0
 resultsk = np.zeros(shape=(98,7))
