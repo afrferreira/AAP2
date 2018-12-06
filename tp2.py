@@ -87,7 +87,7 @@ for v in range(2,100):
     values = compute_read_indexes(data,labels,faults)
     resultsk[v-2] = [v,values[0],values[1],values[2],values[3],values[4],values[5]]
     if((values[5])>bestVal):
-        bestVal=values[3]+values[4]
+        bestVal=values[5]
         bestK=v
 
 kmeans=KMeans(n_clusters=bestK,random_state=0).fit(data)
